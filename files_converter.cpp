@@ -62,12 +62,14 @@ void FilesConverter::readXMLFile()
         {
             parts.push_back(temp);
             temp = "<";
+            letterExist = false;
         }
         else if (currentLetter == '>')
         {
             temp += '>';
             parts.push_back(temp);
             temp = "";
+            letterExist = false;
         }
         else
         {
@@ -87,21 +89,28 @@ void FilesConverter::readXMLFile()
     for (int i = 0; i < parts.size(); i++)
     {
         part = parts[i];
-        if (part.mid(0, 2) == "</")
-        {
-            blocksStack.pop();
-        }
-        else if (part[0] == '<')
-        {
-            Block *temp;
-            temp = new ObjectBlock(parts[i].mid(1, parts[i].length() - 2));
-            blocksStack.top()->getValue()->push_back(temp);
-            blocksStack.push(temp);
-        }
-
-        else
-        {
+        if (part.length() == 1) {
             blocksStack.top()->getValue()->push_back(new StringBlock(part));
+        } else {
+            if (part.mid(0, 2) == "</")
+            {
+                if (parts[i - 1][0] == '<' && parts[i - 1][1] != '/') {
+                    blocksStack.top()->getValue()->push_back(new StringBlock(""));
+                }
+                blocksStack.pop();
+            }
+            else if (part[0] == '<')
+            {
+                Block *temp;
+                temp = new ObjectBlock(parts[i].mid(1, parts[i].length() - 2));
+                blocksStack.top()->getValue()->push_back(temp);
+                blocksStack.push(temp);
+            }
+
+            else
+            {
+                blocksStack.top()->getValue()->push_back(new StringBlock(part));
+            }
         }
     }
 }
@@ -116,64 +125,63 @@ void FilesConverter::generateXMLFile()
 
 void FilesConverter::generateJSONFile()
 {
-    (*out) << "Hello World" << endl;
     (*out) << '{' << endl;
+    indentCounter = 1;
     for (int i = 0; i < root->getValue()->size(); i++)
     {
-        generateJSONObject((*(root->getValue()))[i]);
+        if (i == root->getValue()->size() - 1) {
+            generateJSONObject((*(root->getValue()))[i], true);
+        } else {
+            generateJSONObject((*(root->getValue()))[i], false);
+        }
     }
-    (*out) << endl
-                        << "}" << endl;
-    // (*outFileStreamPtr) << "{" << endl;
-    // stack<Block *> blocks;
-    // blocks.push(root);
-    // while (!blocks.empty())
-    // {
-    //     Block *temp = blocks.top();
-    //     blocks.pop();
-    //     vector<Block *> *objectBlocks = temp->getValue();
-    //     if (objectBlocks == nullptr)
-    //     {
-    //         (*outFileStreamPtr) << '"' << temp->getName() << '",' << endl;
-    //     }
-    //     else
-    //     {
-    //         if (objectBlocks->size() == 1 && ((*objectBlocks)[0]->getValue() == nullptr))
-    //         {
-    //             (*outFileStreamPtr) << '"' << temp->getName() << ": ";
-    //         }
-    //     }
-    // }
+    (*out) << '}' << endl;
 }
 
-void FilesConverter::generateJSONObject(Block *currentBlock)
+void FilesConverter::generateJSONObject(Block *currentBlock, bool isLast)
 {
     if (currentBlock->getValue() == nullptr)
     {
-        (*out) << '"' << currentBlock->getName() << "\"," << endl;
+        (*out) << '"' << currentBlock->getName() << "\"" << (isLast ? "" : ",") << endl;
     }
     else
     {
         if (currentBlock->getValue()->size() == 1 && (*(currentBlock->getValue()))[0]->getValue() == nullptr)
         {
+            for (unsigned i = 0; i < indentCounter; i++) {
+                (*out) << '\t';
+            }
             (*out) << '"' << currentBlock->getName() << "\": ";
-            generateJSONObject((*(currentBlock->getValue()))[0]);
+            generateJSONObject((*(currentBlock->getValue()))[0], isLast);
         }
         else
         {
+            for (unsigned int i = 0; i < indentCounter; i++) {
+                (*out) << '\t';
+            }
             (*out) << '"' << currentBlock->getName() << "\": {" << endl;
+            indentCounter++;
             for (int i = 0; i < currentBlock->getValue()->size(); i++)
             {
-                generateJSONObject((*(currentBlock->getValue()))[i]);
+
+                if (i == currentBlock->getValue()->size() - 1) {
+                    generateJSONObject((*(currentBlock->getValue()))[i], true);
+                } else {
+                    generateJSONObject((*(currentBlock->getValue()))[i], false);
+                }
             }
-            (*out) << endl
-                                << "}" << endl;
+            indentCounter--;
+            for (unsigned int i = 0; i < indentCounter; i++) {
+                (*out) << '\t';
+            }
+            (*out) << "}" << (isLast ? "" : ",") << endl;
         }
     }
 }
 
 FilesConverter::~FilesConverter()
 {
+
     if (inFileStreamPtr != nullptr) {
 
         inFileStreamPtr->close();
@@ -185,4 +193,5 @@ FilesConverter::~FilesConverter()
     delete outFileStreamPtr;}
     if (out != nullptr)
         delete out;
+
 }

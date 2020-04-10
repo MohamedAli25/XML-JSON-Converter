@@ -10,10 +10,10 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     qDebug() << "Hello World" << endl;
-    FilesConverter filesConverter(QString("G:\\College\\Projects\\XML to JSON Converter\\text.txt"), QString("G:\\College\\Projects\\XML to JSON Converter\\new.txt"));
+    FilesConverter filesConverter(QString("text.txt"), QString("new.txt"));
     filesConverter.readXMLFile();
     filesConverter.generateJSONFile();
-    qDebug() << "Hello World" << endl;
+//    qDebug() << "Hello World" << endl;
 
     return a.exec();
 }

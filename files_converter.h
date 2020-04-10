@@ -16,11 +16,11 @@ class FilesConverter
 private:
     QFile *inFileStreamPtr = nullptr;
     QFile *outFileStreamPtr = nullptr;
-    QString jsonString;
     QTextStream* out;
     Block *root = nullptr;
+    unsigned int indentCounter;
 
-    void generateJSONObject(Block *currentBlock);
+    void generateJSONObject(Block *currentBlock, bool isLast);
 
 public:
     FilesConverter(QFile *inFileStreamPtr, QFile *outFileStreamPtr);
